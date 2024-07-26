@@ -1,5 +1,6 @@
 "use strict";
 
+//Elements ///////////////////////////////////////////////////////////////////////////////
 const form = document.querySelector(".form");
 const containerWorkouts = document.querySelector(".workouts");
 const inputType = document.querySelector(".form__input--type");
@@ -8,136 +9,36 @@ const inputDuration = document.querySelector(".form__input--duration");
 const inputCadence = document.querySelector(".form__input--cadence");
 const inputElevation = document.querySelector(".form__input--elevation");
 
-//Global variables
-// let map, mapEvent;
-
-//new:
-//Geolocation api:
-//this is a browser api
-//Have 2 callback function :
-//1.First one is executed when the browsers suuccesfully ge the coorden
-//2.second one is executed when the browsers get error
-// if (navigator.geolocation) {
-//   //Be sure that we dond get error on old browsers
-//   navigator.geolocation.getCurrentPosition(
-//     function (position) {
-//       console.log(position);
-//       const { latitude } = position.coords;
-//       const { longitude } = position.coords;
-//       console.log(latitude, longitude);
-
-//       const coords = [latitude, longitude];
-
-//       //new:
-//       //third party library:
-//       map = L.map("map").setView([latitude, longitude], 15);
-//       //Map IS OUR OBJECT WHICH WE'R interested on
-//       console.log(map);
-
-//       //this is Map style
-//       L.tileLayer("https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
-//         attribution:
-//           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-//       }).addTo(map);
-
-//       //this is Marker
-//       L.marker([latitude, longitude])
-//         .addTo(map)
-//         .bindPopup("A pretty CSS popup.<br> Easily customizable.")
-//         .openPopup();
-
-//       //new:
-//       //Implementing more Marker
-//       //tip:
-//       //WE are using here the Leaflet methods NOT JS methods
-
-//       map.on("click", function (mapE) {
-//         console.log(mapE);
-//         mapEvent = mapE;
-//         //dsipaly Form
-//         form.classList.remove("hidden");
-//         //jump in the form
-//         inputDistance.focus();
-//       });
-//     },
-//     function () {
-//       alert(`Could not get the location`);
-//     }
-//   );
-// }
-
-//Submit listener
-//1.when user submit the form, Marker will be show
-// form.addEventListener("submit", function (e) {
-//   e.preventDefault();
-
-//   //   //tip:
-//   //         //in this Event listener we have many value , and one of these are the current coord that we click
-//   //         //NOW we get the coord
-//   const { lat, lng } = mapEvent.latlng;
-//   console.log(lat, lng);
-
-//   //         //Adding new markers
-//   //         //For more option I ahve to use the documentation
-//   L.marker({ lat, lng })
-//     .addTo(map)
-//     .bindPopup(
-//       L.popup(
-//         //tip:Adding option to popup
-//         {
-//           maxWidth: 250,
-//           minWidth: 100,
-//           autoClose: false,
-//           closeOnClick: false,
-//           className: "running-popup",
-//         }
-//       )
-//     )
-//     .openPopup()
-//     .setPopupContent("WorkOut");
-
-//   //Empty the form
-//   inputCadence.value =
-//     inputDistance.value =
-//     inputDuration.value =
-//     inputElevation.value =
-//       "";
-
-//       form.classList.add('hidden')
-// });
-
-//Submit listener
-//change the input type to hidden
-// inputType.addEventListener("change", function () {
-//   inputElevation.closest('.form__row').classList.toggle('form__row--hidden')
-//   inputCadence.closest('.form__row').classList.toggle('form__row--hidden')}
-// )
-
 //new:
 // creating classes
 
-//Parent class
+//Parent class (workout)
 class Workout {
   clicks = 0;
 
   date = new Date();
 
   //tip:
+  //Craet ID
   //In the realWorld we use the libraries for creating ID
   //But now we creat this manually
-  id = (Date.now() + "").slice(-10); //converting the date to String , than slicing the last 10 number
+  id = (Date.now() + "").slice(-10);
   constructor(
+    //The arquements are Common in every child
     coords,
     distance,
-    duration //The arquements are Common in every child
+    duration
   ) {
     this.coords = coords; //[lat , lng]
     this.distance = distance; // in km
     this.duration = duration; //in min
   }
+
+  //set description
   _setDescription() {
     //tip:
-    //good thing is the array are ZERO base!
+
+    //month array
     const months = [
       "January",
       "February",
@@ -154,14 +55,13 @@ class Workout {
     ];
 
     //new:
-    //cause the getMonth method are zero base , we can the the exacly index from months Array!!!
+    //creat description
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
     }${this.date.getDay()}`;
   }
   _click() {
     this.clicks++;
-    console.log(this.clicks);
   }
 }
 
@@ -177,6 +77,7 @@ class Running extends Workout {
     this._setDescription();
   }
 
+  //calc peac
   calcPeac() {
     //min/km
     this.pace = this.duration / this.distance;
@@ -195,6 +96,7 @@ class Cycling extends Workout {
     this._setDescription();
   }
 
+  //calc speed
   calcSpeed() {
     //km/h
     this.speed = this.distance / (this.duration / 60);
@@ -202,13 +104,9 @@ class Cycling extends Workout {
   }
 }
 
-// const run = new Running([25,-89],15,20,500)
-// const cycling = new Cycling([25,-29],25,20,50)
-// console.log(run,cycling);
-
-//fix:(Refactoring) //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Using the Architectoure
 
+//calss App
 class App {
   //Set the instanse varibles AND private
   #map;
@@ -216,19 +114,25 @@ class App {
   #workouts = [];
   #mapZoomLevel = 13;
 
+  //tip:
+  //We dont want to call this function manuelly
+  //So  we put this here, because this function will imediatly call , right after the page loaded
   constructor() {
-    //tip:
-    //We dont want to call this function manuelly
-    //So  we put this here, because this function will imediatly call , right after the page loaded
-    //tip:these are the thing which run at the begening
+    //tip:these are the functions which run at the begening
+
+    //getting position
     this._getPosition();
 
+    //getting local storage
     this._getLocaleStorage();
 
     //tip:
-    //We are using AGAING because in Eventlistener , THIS keyword pointing to the DOM element(form)
+    //We are using bind method because in Eventlistener , THIS keyword pointing to the DOM element(form)
+
+    //submit
     form.addEventListener("submit", this._newWorkout.bind(this));
 
+    //change field
     inputType.addEventListener("change", this._toggleElevationField);
     containerWorkouts.addEventListener("click", this._goToPopup.bind(this));
   }
@@ -241,8 +145,8 @@ class App {
       //Be sure that we dond get error on old browsers
       navigator.geolocation.getCurrentPosition(
         //tip:
-        //If we the loadMap function as arqument this will be a simple funtion AND its hs NO THIS keyword
-        //SO , we use the bind method to create a new function  and set the this keyword to that
+
+        //load map
         this._loadMap.bind(this),
 
         function () {
@@ -254,16 +158,11 @@ class App {
 
   //load map
   _loadMap(position) {
-    console.log(position);
-    //   //tip:
-    //         //in this Event listener we have many value , and one of these are the current coord that we click
-    //         //NOW we get the coord
-    // const { lat, lng } = this.#mapEvent.latlng;
-
+    //latitude and alangitude
     const { latitude } = position.coords;
     const { longitude } = position.coords;
-    // console.log(latitude, longitude);
 
+    //set coords
     const coords = [latitude, longitude];
 
     //new:
@@ -271,24 +170,14 @@ class App {
     this.#map = L.map("map").setView(coords, this.#mapZoomLevel);
     //Map IS OUR OBJECT WHICH WE'R interested on
 
-    //this is Map style
+    // Map style
     L.tileLayer("https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
 
-    //this is Marker
-    // L.marker([latitude, longitude])
-    //   .addTo(this.#map)
-    //   .bindPopup("A pretty CSS popup.<br> Easily customizable.")
-    //   .openPopup();
-
     //new:
     //Implementing more Marker
-    //tip:
-    //WE are using here the Leaflet methods NOT JS methods
-
-    //tip: usnig bind
     this.#map.on("click", this._showForm.bind(this));
 
     //rendering after the load
@@ -297,7 +186,6 @@ class App {
 
   //show from
   _showForm(mapE) {
-    // console.log(mapE);
     this.#mapEvent = mapE;
     //dsipaly Form
     form.classList.remove("hidden");
@@ -312,7 +200,8 @@ class App {
       inputDuration.value =
       inputElevation.value =
         "";
-    //For hidde the class imediatly , we do this , because it have An animation
+
+    //hide Form
     form.style.display = "none";
     form.classList.add("hidden");
     //put back  the display after 1 second
@@ -331,15 +220,11 @@ class App {
     e.preventDefault();
 
     //Helper funcions
-    //put the arquments in array
-    //1.every method reurn bolean
-    //2.inFinite method check the number or not
     const validInput = (...input) => input.every((inp) => Number.isFinite(inp));
     const allPositive = (...input) => input.every((inp) => inp > 0);
 
     //Get the data from form
     let type = inputType.value;
-    //doing + because the value is String at first step
     let duration = +inputDuration.value;
     let distance = +inputDistance.value;
     const { lat, lng } = this.#mapEvent.latlng;
@@ -353,9 +238,7 @@ class App {
       let cadence = +inputCadence.value;
       let duration = +inputDuration.value;
       if (
-        //tip:Instant of tihs , simply write a helper function
-        // if(!Number.isFinite(type) || !Number.isFinite(duration) || !Number.isFinite(distance) || !Number.isFinite(cadence)) return
-
+        //check inputs
         !validInput(duration, distance, cadence) ||
         !allPositive(duration, distance, cadence)
       )
@@ -364,11 +247,9 @@ class App {
       //Add new workout to object array
       workout = new Running([lat, lng], distance, duration, cadence);
       this.#workouts.push(workout);
-      console.log(workout);
     }
 
     if (type === "cycling") {
-      //If workout is cycling , create the cycling object
       const elevGain = +inputElevation.value;
       if (
         !validInput(duration, distance, elevGain) ||
@@ -388,15 +269,14 @@ class App {
     this._renderingWorkout(workout);
 
     //Hide the form + clear the form
-
     this._hideForm();
 
     this._setLocaleStorage();
   }
 
   _renderingWorkoutMarker(workout) {
-    //         //Adding new markers
-    //         //For more option I ahve to use the documentation
+    //Adding new markers
+    //For more option I have to use the documentation
     L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
@@ -416,6 +296,8 @@ class App {
         `${workout.type === "running" ? "🏃" : "🚴"} ${workout.description}`
       );
   }
+
+  //rendering workout
   _renderingWorkout(workout) {
     //tip:
     //Using the part which is Common
@@ -436,7 +318,7 @@ class App {
           </div>
     `;
     //tip: toFixed is for rounding Number to 1 decimal place
-
+    //Running part
     if (workout.type === "running") {
       html += `
        <div class="workout__details">
@@ -452,6 +334,8 @@ class App {
         </li>
       `;
     }
+
+    //cycling part
     if (workout.type === "cycling") {
       html += `<div class="workout__details">
             <span class="workout__icon">⚡️</span>
@@ -469,16 +353,17 @@ class App {
     form.insertAdjacentHTML("afterend", html);
   }
 
+  //go to popup
   _goToPopup(e) {
     let workoutEl = e.target.closest(".workout");
-    console.log(workoutEl);
     if (!workoutEl) return;
 
+    //findin currect workout
     let workout = this.#workouts.find(
       (work) => work.id === workoutEl.dataset.id
     );
-    console.log(workout);
 
+    //set view on map
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
       Animat: true,
       pan: {
@@ -489,39 +374,30 @@ class App {
   }
 
   //new:
-  //Locale Storage api , is a simple one
-  //And accept 2 String
-  //1. The Name
-  //2. Second one we can use Json.stringify() ,which make everything to string
-  //tip:because we HAVE to use locale storage for very small amoung data
+  //set local storage
   _setLocaleStorage() {
     localStorage.setItem("workouts", JSON.stringify(this.#workouts));
-  } //now we can see it in Application on inspect
+  }
 
   //new:
-  //Getting the Storage
-  //Using JSON.parse() , for reurn the string to object
-
+  //Getting the Storage as object
   _getLocaleStorage() {
     const data = JSON.parse(localStorage.getItem("workouts"));
-
     if (!data) return;
 
     this.#workouts = data;
 
-    //tip:
-    //Good thing to using classes And functionality is this,that we now just use that method not copy or refactor All code
+    //Rendering workout
     this.#workouts.forEach((work) => this._renderingWorkout(work));
   }
 
   //AN Public method
-  //which can clean the Local Storage
-
+  //reset the local storage
   reset() {
     localStorage.removeItem("workouts");
-    //and An method for raload the page
+    //reload
     location.reload();
-  } //now we can can use this on map variable in code or console
+  }
 }
 
 const map = new App();
